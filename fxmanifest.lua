@@ -18,11 +18,13 @@ server_scripts {
 	'server/*.lua'
 }
 
-ui_page 'html/ui.html'
+ui_page 'web/dist/index.html'
 
 files {
-	'html/*',
-	'html/imgs/*'
+	'web/dist/index.html',
+    'web/dist/assets/*',
+    'web/dist/imgs/*',
+	'web/dist/imgs/wallpapers/*'
 }
 
 dependencies {

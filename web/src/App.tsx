@@ -71,12 +71,18 @@ function useDraggableRadio() {
     return { offset, handleMouseDown };
 }
 
-// Predefined Local Wallpapers
 const WALLPAPERS = [
     { id: 'dark', name: 'Classic Dark', url: '' },
     { id: 'wp1', name: 'Neon Drift', url: '/imgs/wallpapers/wp1.jpg' },
     { id: 'wp2', name: 'Cyberpunk City', url: '/imgs/wallpapers/wp2.jpg' },
     { id: 'wp3', name: 'Carbon Fiber', url: '/imgs/wallpapers/wp3.jpg' }
+];
+
+const OLED_WALLPAPERS = [
+    { id: 'pure_black', name: 'Pure Black', url: '' },
+    { id: 'oled_1', name: 'Neon Grid', url: '/imgs/wallpapers/wp1.jpg' },
+    { id: 'oled_2', name: 'Static Noise', url: '/imgs/wallpapers/wp2.jpg' },
+    { id: 'oled_3', name: 'Carbon Matrix', url: '/imgs/wallpapers/wp3.jpg' }
 ];
 
 function App() {
@@ -102,6 +108,13 @@ function App() {
     const [showMiniRadio, setShowMiniRadio] = useState(false);
     const [currentRadioName, setCurrentRadioName] = useState('...');
     
+    // Mini-Radio Customization States
+    const [widgetAccentColor, setWidgetAccentColor] = useLocalStorage<string>('lone_widgetColor', '#00e5ff');
+    const [widgetFrameStyle, setWidgetFrameStyle] = useLocalStorage<string>('lone_widgetFrame', 'hardware'); 
+    const [widgetWallpaper, setWidgetWallpaper] = useLocalStorage<boolean>('lone_widgetWallpaper', false);
+    const [widgetWallpaperBlur, setWidgetWallpaperBlur] = useLocalStorage<boolean>('lone_widgetWallpaperBlur', true);
+    const [oledWallpaperUrl, setOledWallpaperUrl] = useLocalStorage<string>('lone_oledWallpaperUrl', '');
+
     // Tuning Mode States
     const [tuningModeEnabled, setTuningModeEnabled] = useLocalStorage<boolean>('lone_tuningModeEnabled', false);
     const [currentFreq, setCurrentFreq] = useState(87.5);
@@ -234,7 +247,7 @@ function App() {
         let nearestRadio: Radio | null = null;
         let minDiff = Infinity;
         
-        radios.forEach(r => {
+        for (const r of radios) {
             if (r.freq) {
                 const diff = Math.abs(r.freq - currentFreq);
                 if (diff < minDiff) {
@@ -242,7 +255,7 @@ function App() {
                     nearestRadio = r;
                 }
             }
-        });
+        }
 
         if (gainNodeRef.current) {
             // White noise static calculation
@@ -300,38 +313,16 @@ function App() {
         return name.substring(0, 2).toUpperCase();
     };
 
-    const filteredRadios = radios.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    // Mock tester helper
-    const playMockRadio = () => {
-        window.dispatchEvent(new MessageEvent('message', {
-            data: {
-                openRadioMenu: true,
-                currentlyPlayingRadio: true,
-                radios: [
-                    { name: 'Vanavil FM', url: 'https://s7.yesstreaming.net:9000/stream', freq: 88.5 },
-                    { name: 'NCS Music', url: 'https://www.youtube.com/watch?v=MsSrIlOi81o', freq: 92.1 },
-                    { name: 'Los Santos Rock', url: 'http://url1', freq: 97.8 },
-                    { name: 'Non Stop Pop', url: 'http://url2', freq: 100.7 },
-                    { name: 'West Coast Classics', url: 'http://url3', freq: 103.2 },
-                    { name: 'Radio Los Santos', url: 'http://url4', freq: 106.5 }
-                ]
-            }
-        }));
+    const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 229, 255';
     };
+
+    const filteredRadios = radios.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
         <>
             <audio ref={audioRef} style={{ display: 'none' }} />
-
-            {!isVisible && !showMiniRadio && !(window as any).GetParentResourceName && (
-                <button 
-                    onClick={playMockRadio} 
-                    style={{position: 'absolute', top: '10px', left: '10px', zIndex: 9999, background: '#007aff', color: 'white', padding: '10px 20px', borderRadius: '8px', border:'none', cursor: 'pointer', fontWeight: 'bold'}}
-                >
-                    Open Mock UI
-                </button>
-            )}
 
             {isVisible && (
                 <div 
@@ -384,13 +375,20 @@ function App() {
                                 {activeTab === 'radios' && !tuningModeEnabled && (
                                     <div className="app-pane">
                                         <div className="search-container">
-                                            <input 
-                                                type="text"
-                                                className="search-bar"
-                                                placeholder="Search stations..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                            />
+                                            <div style={{display: 'flex', gap: '15px', alignItems: 'center'}}>
+                                                <input 
+                                                    type="text"
+                                                    className="search-bar"
+                                                    placeholder="Search stations..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    style={{flex: 1}}
+                                                />
+                                                <button className="tuner-toggle-btn" onClick={() => setTuningModeEnabled(true)}>
+                                                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 22A10 10 0 0 0 22 12A10 10 0 0 0 12 2A10 10 0 0 0 2 12A10 10 0 0 0 12 22M12 4A8 8 0 0 1 20 12A8 8 0 0 1 12 20A8 8 0 0 1 4 12A8 8 0 0 1 12 4M12 6A6 6 0 0 0 6 12A6 6 0 0 0 12 18A6 6 0 0 0 18 12A6 6 0 0 0 12 6M12 8A4 4 0 0 1 16 12A4 4 0 0 1 12 16A4 4 0 0 1 8 12A4 4 0 0 1 12 8Z"/></svg>
+                                                    Tuner Mode
+                                                </button>
+                                            </div>
                                             <div className="station-grid">
                                                 {filteredRadios.map((radio, idx) => (
                                                     <div key={idx} className="app-icon-wrapper" onClick={() => sendRadioSelection(radio.name, radio.url)}>
@@ -412,6 +410,22 @@ function App() {
 
                                 {activeTab === 'radios' && tuningModeEnabled && (
                                     <div className="app-pane tuning-pane">
+                                        
+                                        <div className="tuner-header">
+                                            <button className="tuner-toggle-btn back" onClick={() => setTuningModeEnabled(false)}>
+                                                &larr; Station List
+                                            </button>
+                                            <div className="tuner-vol-widget">
+                                                <label>VOL</label>
+                                                <input 
+                                                    type="range" 
+                                                    min="0" max="100" step="1" 
+                                                    value={currentVolume} 
+                                                    onChange={(e) => updateVolume(Number(e.target.value))}
+                                                />
+                                            </div>
+                                        </div>
+
                                         <div className="tuner-container">
                                             <div className="tuner-digital-readout">
                                                 <div className="tuner-number">{currentFreq.toFixed(1)}</div>
@@ -502,6 +516,90 @@ function App() {
                                     </div>
 
                                     <div className="settings-group">
+                                        <label>Widget Accent Color</label>
+                                        <p style={{margin: 0, color: '#aaa', fontSize: '13px', marginBottom: '8px'}}>Choose the color of the mini-radio glowing text.</p>
+                                        <div style={{display: 'flex', gap: '8px'}}>
+                                            {['#00e5ff', '#ff2a5f', '#32d74b', '#ff7b00', '#bf55ff', '#ffffff'].map(c => (
+                                                <div 
+                                                    key={c}
+                                                    onClick={() => setWidgetAccentColor(c)}
+                                                    style={{
+                                                        width: '24px', height: '24px', borderRadius: '50%', backgroundColor: c, 
+                                                        cursor: 'pointer', border: widgetAccentColor === c ? '2px solid white' : '2px solid transparent',
+                                                        boxShadow: widgetAccentColor === c ? `0 0 10px ${c}` : 'none'
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="settings-group">
+                                        <label>Widget Frame Style</label>
+                                        <p style={{margin: 0, color: '#aaa', fontSize: '13px', marginBottom: '8px'}}>Change the look of the floating radio chassis.</p>
+                                        <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                                            {['hardware', 'glass', 'solid', 'transparent', 'neon'].map(style => (
+                                                <button 
+                                                    key={style}
+                                                    className={`tuner-toggle-btn ${widgetFrameStyle === style ? '' : 'back'}`}
+                                                    onClick={() => setWidgetFrameStyle(style)}
+                                                    style={{padding: '6px 10px', fontSize: '11px', flex: '1 1 auto'}}
+                                                >
+                                                    {style.toUpperCase()}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="settings-group toggle-container">
+                                        <div>
+                                            <label style={{marginBottom: '4px'}}>Widget Wallpaper Sync</label>
+                                            <p style={{margin: 0, color: '#aaa', fontSize: '13px'}}>Apply the main wallpaper to the mini-radio background.</p>
+                                        </div>
+                                        <div 
+                                            className={`toggle-switch ${widgetWallpaper ? 'on' : ''}`}
+                                            onClick={() => setWidgetWallpaper(!widgetWallpaper)}
+                                        ></div>
+                                    </div>
+
+                                    <div className="settings-group toggle-container">
+                                        <div>
+                                            <label style={{marginBottom: '4px'}}>Widget Wallpaper Blur</label>
+                                            <p style={{margin: 0, color: '#aaa', fontSize: '13px'}}>Apply a glass blur to the mini-radio background when Wallpaper Sync is active.</p>
+                                        </div>
+                                        <div 
+                                            className={`toggle-switch ${widgetWallpaperBlur ? 'on' : ''}`}
+                                            onClick={() => setWidgetWallpaperBlur(!widgetWallpaperBlur)}
+                                        ></div>
+                                    </div>
+
+                                    <div className="settings-group">
+                                        <label>OLED Screen Custom Image</label>
+                                        <p style={{margin: 0, color: '#aaa', fontSize: '13px'}}>Select a preset or paste an image URL to set a custom background inside the OLED screen.</p>
+                                        
+                                        <div className="wallpaper-gallery" style={{marginTop: '10px'}}>
+                                            {OLED_WALLPAPERS.map(wp => (
+                                                <div 
+                                                    key={wp.id} 
+                                                    className={`wallpaper-thumb ${oledWallpaperUrl === wp.url ? 'active' : ''}`}
+                                                    onClick={() => setOledWallpaperUrl(wp.url)}
+                                                    style={{ backgroundImage: wp.url ? `url('${wp.url}')` : 'none', backgroundColor: '#000' }}
+                                                >
+                                                    {!wp.url && <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', color:'#888'}}>Black</div>}
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <input 
+                                            type="text" 
+                                            className="custom-input" 
+                                            placeholder="Custom inner OLED Image URL..." 
+                                            value={oledWallpaperUrl}
+                                            onChange={(e) => setOledWallpaperUrl(e.target.value)}
+                                            style={{ marginTop: '10px' }}
+                                        />
+                                    </div>
+
+                                    <div className="settings-group">
                                         <label>Widget Overlay Scale ({radioScale.toFixed(1)}x)</label>
                                         <input 
                                             type="range"
@@ -573,32 +671,66 @@ function App() {
                 </div>
             )}
 
-            {/* Modern Glassmorphic Digital Radio Overlay */}
+            {/* Embedded OLED Hardware Screen Overlay */}
             {showMiniRadio && overlayEnabled && (
                 <div id="radioIcon" style={{ transform: `translate(${radioOffset.x}px, ${radioOffset.y}px) scale(${radioScale})` }}>
-                    <div className="css-radio-chassis" onMouseDown={handleRadioDrag}>
+                    <div 
+                        className="css-radio-chassis" 
+                        onMouseDown={handleRadioDrag}
+                        style={{
+                            ...(widgetFrameStyle === 'glass' ? {
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(20,20,25,0.7), rgba(20,20,25,0.7)), url('${wallpaperUrl}') center/cover` : 'rgba(20,20,25,0.7)',
+                                backdropFilter: widgetWallpaperBlur ? 'blur(15px)' : 'none',
+                                border: '1px solid rgba(255,255,255,0.1)'
+                            } : widgetFrameStyle === 'solid' ? {
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(10,10,10,0.9), rgba(10,10,10,0.9)), url('${wallpaperUrl}') center/cover` : '#0a0a0c',
+                                border: `1px solid ${widgetAccentColor}`,
+                                backdropFilter: widgetWallpaperBlur ? 'blur(10px)' : 'none'
+                            } : widgetFrameStyle === 'transparent' ? {
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${wallpaperUrl}') center/cover` : 'transparent',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                                backdropFilter: widgetWallpaperBlur ? 'blur(5px)' : 'none'
+                            } : widgetFrameStyle === 'neon' ? {
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(5,5,10,0.8), rgba(5,5,10,0.8)), url('${wallpaperUrl}') center/cover` : '#05050a',
+                                border: `2px solid ${widgetAccentColor}`,
+                                boxShadow: `inset 0 0 10px rgba(${hexToRgb(widgetAccentColor)}, 0.2)`,
+                                backdropFilter: widgetWallpaperBlur ? 'blur(10px)' : 'none'
+                            } : {
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(30,30,34,0.8), rgba(17,17,21,0.9)), url('${wallpaperUrl}') center/cover` : 'linear-gradient(145deg, #1e1e22, #111115)',
+                                border: '1px solid #000',
+                                backdropFilter: widgetWallpaperBlur ? 'blur(15px)' : 'none'
+                            })
+                        }}
+                    >
                         
-                        <div className="radio-widget-icon">
-                            {getInitials(currentRadioName !== '...' ? currentRadioName : 'ON')}
-                        </div>
-                        
-                        <div className="radio-widget-info" style={{visibility: showRadioDisplay ? 'visible' : 'hidden'}}>
-                            <div className="radio-widget-title">
-                                {currentRadioName !== '...' ? currentRadioName : 'Lone OS Radio'}
-                            </div>
-                            <div className="radio-widget-subtitle">
-                                <span className="live-dot"></span> LIVE BROADCAST
-                            </div>
-                        </div>
+                        <div className="radio-hardware-brand">LONE AUDIO <span style={{color: widgetAccentColor}}>{widgetFrameStyle.toUpperCase()}</span></div>
 
-                        {currentlyPlayingRadio && showRadioDisplay && (
-                            <div className="radio-widget-eq">
-                                <div className="eq-bar"></div>
-                                <div className="eq-bar"></div>
-                                <div className="eq-bar"></div>
-                                <div className="eq-bar"></div>
+                        <div className="radio-oled-screen" style={{
+                            borderColor: widgetAccentColor === '#ffffff' ? '#333' : `rgba(${hexToRgb(widgetAccentColor)}, 0.2)`,
+                            boxShadow: `inset 0 0 15px rgba(${hexToRgb(widgetAccentColor)}, 0.05), 0 1px 0 rgba(255,255,255,0.05)`,
+                            backdropFilter: widgetWallpaperBlur ? 'blur(10px)' : 'none',
+                            ...(oledWallpaperUrl ? {
+                                background: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('${oledWallpaperUrl}') center/cover`
+                            } : {})
+                        }}>
+                            <div className="radio-widget-info" style={{visibility: showRadioDisplay ? 'visible' : 'hidden'}}>
+                                <div className="radio-widget-title" style={{color: widgetAccentColor, textShadow: `0 0 8px ${widgetAccentColor}99`}}>
+                                    {currentRadioName !== '...' ? currentRadioName : 'NO SIGNAL'}
+                                </div>
+                                <div className="radio-widget-subtitle" style={{color: widgetAccentColor, textShadow: `0 0 5px ${widgetAccentColor}4d`}}>
+                                    {currentlyPlayingRadio ? <><span className="live-dot" style={{backgroundColor: widgetAccentColor, boxShadow: `0 0 6px ${widgetAccentColor}`}}></span> FM {currentFreq.toFixed(1)} MHZ</> : "STANDBY"}
+                                </div>
                             </div>
-                        )}
+
+                            {currentlyPlayingRadio && showRadioDisplay && (
+                                <div className="radio-widget-eq">
+                                    <div className="eq-bar" style={{backgroundColor: widgetAccentColor, boxShadow: `0 0 4px ${widgetAccentColor}`}}></div>
+                                    <div className="eq-bar" style={{backgroundColor: widgetAccentColor, boxShadow: `0 0 4px ${widgetAccentColor}`}}></div>
+                                    <div className="eq-bar" style={{backgroundColor: widgetAccentColor, boxShadow: `0 0 4px ${widgetAccentColor}`}}></div>
+                                    <div className="eq-bar" style={{backgroundColor: widgetAccentColor, boxShadow: `0 0 4px ${widgetAccentColor}`}}></div>
+                                </div>
+                            )}
+                        </div>
 
                     </div>
                 </div>
