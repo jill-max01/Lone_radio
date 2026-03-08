@@ -28,5 +28,5 @@ files {
 }
 
 dependencies {
-	'xsound'
+	'olisound'
   }

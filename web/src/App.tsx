@@ -155,7 +155,7 @@ function App() {
         }
     };
 
-    // Browser Mock Audio
+    // Audio element ref (not used in FiveM, xSound handles playback)
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Draggable hook for the mini widget
@@ -169,11 +169,16 @@ function App() {
             if (data.openRadioMenu) {
                 setRadios(data.radios || []);
                 setCurrentlyPlayingRadio(!!data.currentlyPlayingRadio);
-                setActiveTab('radios'); // Reset to radios on explicit open
+                setActiveTab('radios');
                 setIsVisible(true);
             }
+            // When Lua sends close=true, just update React state (do NOT call closeRadioMenu to avoid loop)
             if (data.close === true) {
-                closeRadioMenu(data.closeall || false);
+                setIsVisible(false);
+                if (data.closeall) {
+                    setShowMiniRadio(false);
+                    setCurrentlyPlayingRadio(false);
+                }
             }
             if (data.showradio === true) {
                 setShowMiniRadio(true);
@@ -185,18 +190,27 @@ function App() {
         return () => window.removeEventListener('message', handleMessage);
     }, []);
 
-    // Status Bar Real-Time Clock Mock
+    // Status Bar Real-Time Clock
     const [currentTime, setCurrentTime] = useState(new Date());
     useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60); // Update every minute
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60);
         return () => clearInterval(timer);
     }, []);
 
-    // Escape listener
+    // Escape key: tell Lua to release NUI focus, then hide UI
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                closeRadioMenu(false);
+                setIsVisible(false);
+                // Tell Lua side to release NUI focus
+                if ((window as any).GetParentResourceName) {
+                    const resourceName = (window as any).GetParentResourceName();
+                    fetch(`https://${resourceName}/closeradio`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                        body: JSON.stringify({}),
+                    }).catch(() => {});
+                }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -204,12 +218,14 @@ function App() {
     }, []);
 
     const sendData = (eventName: string, data: any) => {
-        const resourceName = (window as any).GetParentResourceName ? (window as any).GetParentResourceName() : 'Lone_radio';
+        // Only send NUI callbacks when running inside FiveM
+        if (!(window as any).GetParentResourceName) return;
+        const resourceName = (window as any).GetParentResourceName();
         fetch(`https://${resourceName}/${eventName}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json; charset=utf-8' },
             body: JSON.stringify(data),
-        }).catch(() => console.log('Mock fetch UI:', eventName, data));
+        }).catch(() => {});
     };
 
     const sendRadioSelection = (name: string, url: string) => {
@@ -217,24 +233,12 @@ function App() {
         setShowMiniRadio(true);
         setCurrentRadioName(name);
         setCurrentlyPlayingRadio(true);
-
-        // Browser Testing Only
-        if (!(window as any).GetParentResourceName && audioRef.current) {
-            audioRef.current.src = url;
-            audioRef.current.volume = currentVolume / 100;
-            audioRef.current.play().catch(e => console.log("Audio play blocked", e));
-        }
     };
 
     const sendStopRadio = () => {
         sendData('stopRadio', {});
         setCurrentlyPlayingRadio(false); 
         setShowMiniRadio(false);
-
-        if (!(window as any).GetParentResourceName && audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = "";
-        }
     };
 
     // Calculate tuning static and station snapping
@@ -292,19 +296,8 @@ function App() {
     const updateVolume = (vol: number) => {
         setCurrentVolume(vol);
         sendData('updateVolume', { volume: vol });
-
-        if (!(window as any).GetParentResourceName && audioRef.current) {
-            audioRef.current.volume = vol / 100;
-        }
     };
 
-    const closeRadioMenu = (disableall: boolean) => {
-        sendData('closeradio', null);
-        setIsVisible(false);
-        if (disableall) {
-            setShowMiniRadio(false);
-        }
-    };
 
     // Helper to generate initials for App icons
     const getInitials = (name: string) => {
