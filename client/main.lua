@@ -6,17 +6,23 @@ local currentlyPlayingRadio = nil
 local activeVehicleRadios = {}
 local audioLoopRunning = false
 
--- Track whether player is currently inside a vehicle
+-- Persist config
+local persistEnabled = Config.persistRadio or false
+local playerPersistOverride = true
+local savedRadio = nil
+
+-- Track vehicle state
 local wasInVehicle = false
 local lastVehicleNetId = nil
 
 RegisterNUICallback("playRadio", function(data, cb)
     local radioUrl = data.url
-    local volume = data.volume or 1.0
+    local volume = data.volume or 50
 
     if radioUrl then
         TriggerServerEvent("playRadio", { radioname = data.radioname, url = radioUrl, volume = volume })
         currentlyPlayingRadio = { name = data.radioname, url = radioUrl, volume = volume }
+        savedRadio = { name = data.radioname, url = radioUrl, volume = volume }
     end
 
     cb({})
@@ -33,6 +39,7 @@ end)
 RegisterNUICallback("stopRadio", function(data, cb)
     TriggerServerEvent("stopRadio")
     currentlyPlayingRadio = nil
+    savedRadio = nil
     cb({})
 end)
 
@@ -41,7 +48,20 @@ RegisterNUICallback("updateVolume", function(data, cb)
 
     if currentlyPlayingRadio then
         currentlyPlayingRadio.volume = volume
+
+        -- INSTANT local volume update (no server round-trip needed for audio)
+        if lastVehicleNetId then
+            local soundId = "radio_" .. lastVehicleNetId
+            if oliSound:soundExists(soundId) then
+                oliSound:setVolume(soundId, volume / 100.0)
+            end
+        end
+
+        -- Update server state bag for sync with other players
         TriggerServerEvent("updateVolume", volume)
+    end
+    if savedRadio then
+        savedRadio.volume = volume
     end
 
     cb({})
@@ -49,6 +69,11 @@ end)
 
 RegisterNUICallback("closeradio", function(data, cb)
     SetNuiFocus(false, false)
+    cb({})
+end)
+
+RegisterNUICallback("togglePersist", function(data, cb)
+    playerPersistOverride = data.enabled
     cb({})
 end)
 
@@ -69,7 +94,9 @@ function openRadioMenu()
     SendNUIMessage({
         openRadioMenu = true,
         radios = Config.Radios,
-        currentlyPlayingRadio = currentlyPlayingRadio
+        currentlyPlayingRadio = currentlyPlayingRadio,
+        persistRadio = persistEnabled,
+        playerPersistOverride = playerPersistOverride
     })
 end
 
@@ -90,8 +117,7 @@ RegisterCommand(Config.command, function()
 end)
 
 -- ============================================================
--- VEHICLE ENTER/EXIT: muffle + mini screen
--- Simple: INSIDE = clear, OUTSIDE = muffled
+-- VEHICLE ENTER/EXIT
 -- ============================================================
 
 Citizen.CreateThread(function()
@@ -101,13 +127,13 @@ Citizen.CreateThread(function()
         local inVehicle = IsPedInAnyVehicle(ped, false)
 
         if inVehicle and not wasInVehicle then
-            -- GOT IN
+            -- GOT IN a vehicle
             local vehicle = GetVehiclePedIsIn(ped, false)
             if vehicle ~= 0 then
                 lastVehicleNetId = NetworkGetNetworkIdFromEntity(vehicle)
                 local soundId = "radio_" .. lastVehicleNetId
 
-                -- Clear audio: un-muffle + full volume
+                -- Un-muffle for this vehicle's radio
                 if oliSound:soundExists(soundId) then
                     oliSound:setMuffled(soundId, false)
                     local rd = activeVehicleRadios[lastVehicleNetId]
@@ -116,21 +142,30 @@ Citizen.CreateThread(function()
                     end
                 end
 
-                -- Show mini screen if radio playing
+                -- Check if vehicle already has a radio
                 local state = Entity(vehicle).state.loneradio
                 if state and state.isPlaying then
+                    -- Vehicle has its own radio -> sync to it
                     currentlyPlayingRadio = state
+                    savedRadio = { name = state.name, url = state.url, volume = state.volume }
                     SendNUIMessage({ showradio = true, name = state.name })
+                elseif persistEnabled and playerPersistOverride and savedRadio then
+                    -- No radio on this vehicle but player has a saved one -> apply it
+                    TriggerServerEvent("loneradio:enterVehicle")
+                    currentlyPlayingRadio = savedRadio
+                    SendNUIMessage({ showradio = true, name = savedRadio.name })
                 end
             end
             wasInVehicle = true
 
         elseif not inVehicle and wasInVehicle then
-            -- GOT OUT
+            -- GOT OUT of a vehicle
+            local shouldPersist = persistEnabled and playerPersistOverride and savedRadio
+
             if lastVehicleNetId then
                 local soundId = "radio_" .. lastVehicleNetId
 
-                -- Muffle + reduce volume
+                -- Muffle audio for outsiders
                 if oliSound:soundExists(soundId) then
                     oliSound:setMuffled(soundId, true)
                     local rd = activeVehicleRadios[lastVehicleNetId]
@@ -138,8 +173,19 @@ Citizen.CreateThread(function()
                         oliSound:setVolume(soundId, ((rd.volume or 50) / 100.0) * 0.3)
                     end
                 end
+
+                -- Clear old vehicle's state bag
+                if shouldPersist then
+                    -- Persist: only clear vehicle state, keep server-side saved radio
+                    TriggerServerEvent("stopVehicleRadio")
+                else
+                    -- No persist: fully stop radio + clear saved
+                    TriggerServerEvent("stopRadio")
+                    savedRadio = nil
+                end
             end
 
+            -- Hide mini screen
             closeRadioMenu2()
             currentlyPlayingRadio = nil
             wasInVehicle = false
@@ -149,7 +195,7 @@ Citizen.CreateThread(function()
 end)
 
 -- ============================================================
--- AUDIO ENGINE: position tracking only (no muffle in loop)
+-- AUDIO ENGINE: position tracking
 -- ============================================================
 
 function StartAudioLoop()
@@ -201,7 +247,7 @@ function PlayVehicleRadioLocal(netId, radioData)
         oliSound:PlayUrlPos(soundId, radioData.url, baseVol, vehCoords, true)
         oliSound:Distance(soundId, 12.0)
 
-        -- If player is outside this vehicle, apply muffle immediately
+        -- If outside this vehicle, muffle immediately
         local ped = PlayerPedId()
         local currentVeh = GetVehiclePedIsIn(ped, false)
         local inside = (currentVeh ~= 0 and NetworkGetNetworkIdFromEntity(currentVeh) == netId)

@@ -73,16 +73,16 @@ function useDraggableRadio() {
 
 const WALLPAPERS = [
     { id: 'dark', name: 'Classic Dark', url: '' },
-    { id: 'wp1', name: 'Neon Drift', url: '/imgs/wallpapers/wp1.jpg' },
-    { id: 'wp2', name: 'Cyberpunk City', url: '/imgs/wallpapers/wp2.jpg' },
-    { id: 'wp3', name: 'Carbon Fiber', url: '/imgs/wallpapers/wp3.jpg' }
+    { id: 'wp1', name: 'Neon Drift', url: './imgs/wallpapers/wp1.jpg' },
+    { id: 'wp2', name: 'Cyberpunk City', url: './imgs/wallpapers/wp2.jpg' },
+    { id: 'wp3', name: 'Carbon Fiber', url: './imgs/wallpapers/wp3.jpg' }
 ];
 
 const OLED_WALLPAPERS = [
     { id: 'pure_black', name: 'Pure Black', url: '' },
-    { id: 'oled_1', name: 'Neon Grid', url: '/imgs/wallpapers/wp1.jpg' },
-    { id: 'oled_2', name: 'Static Noise', url: '/imgs/wallpapers/wp2.jpg' },
-    { id: 'oled_3', name: 'Carbon Matrix', url: '/imgs/wallpapers/wp3.jpg' }
+    { id: 'oled_1', name: 'Neon Grid', url: './imgs/wallpapers/wp1.jpg' },
+    { id: 'oled_2', name: 'Static Noise', url: './imgs/wallpapers/wp2.jpg' },
+    { id: 'oled_3', name: 'Carbon Matrix', url: './imgs/wallpapers/wp3.jpg' }
 ];
 
 function App() {
@@ -91,6 +91,10 @@ function App() {
     const [currentVolume, setCurrentVolume] = useState(50);
     const [currentlyPlayingRadio, setCurrentlyPlayingRadio] = useState(false);
     
+    // Persist radio config from server
+    const [persistRadio, setPersistRadio] = useState(false);
+    const [playerPersistOverride, setPlayerPersistOverride] = useLocalStorage<boolean>('lone_persistOverride', true);
+
     // Search feature
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -169,6 +173,8 @@ function App() {
             if (data.openRadioMenu) {
                 setRadios(data.radios || []);
                 setCurrentlyPlayingRadio(!!data.currentlyPlayingRadio);
+                if (data.persistRadio !== undefined) setPersistRadio(data.persistRadio);
+                if (data.playerPersistOverride !== undefined) setPlayerPersistOverride(data.playerPersistOverride);
                 setActiveTab('radios');
                 setIsVisible(true);
             }
@@ -265,10 +271,10 @@ function App() {
             // White noise static calculation
             if (minDiff < 0.2) {
                 // We are very close to a station, fade out static completely
-                gainNodeRef.current.gain.value = Math.max(0, (minDiff * 5) * 0.2); 
+                gainNodeRef.current.gain.value = Math.max(0, (minDiff * 5) * 0.05); 
             } else {
-                // Pure static between stations
-                gainNodeRef.current.gain.value = 0.3;
+                // Pure static between stations (quiet)
+                gainNodeRef.current.gain.value = 0.08;
             }
         }
 
@@ -328,8 +334,6 @@ function App() {
                             <div 
                                 className="wallpaper-overlay" 
                                 style={{ 
-                                    backdropFilter: wallpaperBlur ? 'blur(8px)' : 'none',
-                                    WebkitBackdropFilter: wallpaperBlur ? 'blur(8px)' : 'none',
                                     background: wallpaperBlur ? 'rgba(15, 15, 20, 0.75)' : 'rgba(15, 15, 20, 0.4)'
                                 }}
                             ></div>
@@ -496,6 +500,23 @@ function App() {
                                             onClick={() => setTuningModeEnabled(!tuningModeEnabled)}
                                         ></div>
                                     </div>
+
+                                    {persistRadio && (
+                                        <div className="settings-group toggle-container">
+                                            <div>
+                                                <label style={{marginBottom: '4px'}}>Keep Radio Between Vehicles</label>
+                                                <p style={{margin: 0, color: '#aaa', fontSize: '13px'}}>When you exit a vehicle, your radio station will auto-play in the next vehicle you enter.</p>
+                                            </div>
+                                            <div 
+                                                className={`toggle-switch ${playerPersistOverride ? 'on' : ''}`}
+                                                onClick={() => {
+                                                    const newVal = !playerPersistOverride;
+                                                    setPlayerPersistOverride(newVal);
+                                                    sendData('togglePersist', { enabled: newVal });
+                                                }}
+                                            ></div>
+                                        </div>
+                                    )}
                                     
                                     <div className="settings-group toggle-container">
                                         <div>
@@ -672,26 +693,20 @@ function App() {
                         onMouseDown={handleRadioDrag}
                         style={{
                             ...(widgetFrameStyle === 'glass' ? {
-                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(20,20,25,0.7), rgba(20,20,25,0.7)), url('${wallpaperUrl}') center/cover` : 'rgba(20,20,25,0.7)',
-                                backdropFilter: widgetWallpaperBlur ? 'blur(15px)' : 'none',
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(20,20,25,0.9), rgba(20,20,25,0.9)), url('${wallpaperUrl}') center/cover` : 'rgba(20,20,25,0.9)',
                                 border: '1px solid rgba(255,255,255,0.1)'
                             } : widgetFrameStyle === 'solid' ? {
-                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(10,10,10,0.9), rgba(10,10,10,0.9)), url('${wallpaperUrl}') center/cover` : '#0a0a0c',
-                                border: `1px solid ${widgetAccentColor}`,
-                                backdropFilter: widgetWallpaperBlur ? 'blur(10px)' : 'none'
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(10,10,10,0.95), rgba(10,10,10,0.95)), url('${wallpaperUrl}') center/cover` : '#0a0a0c',
+                                border: `1px solid ${widgetAccentColor}`
                             } : widgetFrameStyle === 'transparent' ? {
-                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${wallpaperUrl}') center/cover` : 'transparent',
-                                border: '1px solid rgba(255,255,255,0.05)',
-                                backdropFilter: widgetWallpaperBlur ? 'blur(5px)' : 'none'
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${wallpaperUrl}') center/cover` : 'rgba(0,0,0,0.6)',
+                                border: '1px solid rgba(255,255,255,0.05)'
                             } : widgetFrameStyle === 'neon' ? {
-                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(5,5,10,0.8), rgba(5,5,10,0.8)), url('${wallpaperUrl}') center/cover` : '#05050a',
-                                border: `2px solid ${widgetAccentColor}`,
-                                boxShadow: `inset 0 0 10px rgba(${hexToRgb(widgetAccentColor)}, 0.2)`,
-                                backdropFilter: widgetWallpaperBlur ? 'blur(10px)' : 'none'
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(5,5,10,0.9), rgba(5,5,10,0.9)), url('${wallpaperUrl}') center/cover` : '#05050a',
+                                border: `2px solid ${widgetAccentColor}`
                             } : {
-                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(30,30,34,0.8), rgba(17,17,21,0.9)), url('${wallpaperUrl}') center/cover` : 'linear-gradient(145deg, #1e1e22, #111115)',
-                                border: '1px solid #000',
-                                backdropFilter: widgetWallpaperBlur ? 'blur(15px)' : 'none'
+                                background: widgetWallpaper && wallpaperUrl ? `linear-gradient(rgba(30,30,34,0.95), rgba(17,17,21,0.95)), url('${wallpaperUrl}') center/cover` : 'linear-gradient(145deg, #1e1e22, #111115)',
+                                border: '1px solid #000'
                             })
                         }}
                     >
@@ -700,8 +715,6 @@ function App() {
 
                         <div className="radio-oled-screen" style={{
                             borderColor: widgetAccentColor === '#ffffff' ? '#333' : `rgba(${hexToRgb(widgetAccentColor)}, 0.2)`,
-                            boxShadow: `inset 0 0 15px rgba(${hexToRgb(widgetAccentColor)}, 0.05), 0 1px 0 rgba(255,255,255,0.05)`,
-                            backdropFilter: widgetWallpaperBlur ? 'blur(10px)' : 'none',
                             ...(oledWallpaperUrl ? {
                                 background: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('${oledWallpaperUrl}') center/cover`
                             } : {})
