@@ -10,6 +10,7 @@ local audioLoopRunning = false
 local persistEnabled = Config.persistRadio or false
 local playerPersistOverride = true
 local savedRadio = nil
+local skipNextStateBagClose = false -- Prevents UI close when player presses Pause
 
 -- Track vehicle state
 local wasInVehicle = false
@@ -37,6 +38,7 @@ RegisterNetEvent("updateCurrentRadio", function(updatedRadio)
 end)
 
 RegisterNUICallback("stopRadio", function(data, cb)
+    skipNextStateBagClose = true -- Don't let state bag handler close the UI
     TriggerServerEvent("stopRadio")
     currentlyPlayingRadio = nil
     savedRadio = nil
@@ -275,7 +277,12 @@ AddStateBagChangeHandler('loneradio', nil, function(bagName, key, value, _reserv
         local currentVeh = GetVehiclePedIsIn(PlayerPedId(), false)
         if currentVeh ~= 0 and NetworkGetNetworkIdFromEntity(currentVeh) == netId then
             currentlyPlayingRadio = nil
-            SendNUIMessage({ close = true, closeall = true })
+            -- Only close UI if NOT triggered by the player themselves
+            if skipNextStateBagClose then
+                skipNextStateBagClose = false
+            else
+                SendNUIMessage({ close = true, closeall = true })
+            end
         end
         return
     end
