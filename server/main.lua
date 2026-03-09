@@ -1,115 +1,125 @@
 -- \Made by .lone17 with ❤️
 
-local currentlyPlayingRadio = nil
-local currentVolume = 1.0 -- Default volume (1.0 = 100%)
+local playerRadios = {} -- playerRadios[src] = { name, url, volume }
 
 RegisterNetEvent("playRadio")
 RegisterNetEvent("stopRadio")
+RegisterNetEvent("stopVehicleRadio")
 RegisterNetEvent("updateVolume")
+RegisterNetEvent("loneradio:enterVehicle")
 
 AddEventHandler("playRadio", function(radioData)
+    local src = source
     local name = radioData.radioname
     local radioUrl = radioData.url
-    local volume = radioData.volume or currentVolume
-    local vehicle = GetVehiclePedIsIn(GetPlayerPed(source), false)
+    local volume = radioData.volume or 50
+    
+    local ped = GetPlayerPed(src)
+    local vehicle = GetVehiclePedIsIn(ped, false)
 
-    local playerIds = GetPlayersInSameVehicle(source)
-   -- if #playerIds == 1 and vehicle then  
-        TriggerClientEvent("loneradio:playRadio",source,"play",2,{ name = name ,link = radioUrl, volume = volume})
-        currentlyPlayingRadio = { url = radioUrl, volume = volume }
-    --else
-        -- Player is in a vehicle or there are other players nearby
-      for _, playerId in ipairs(playerIds) do
-                currentlyPlayingRadio = {
-                    name = radioData.name or "Unknown Radio",
-                    url = radioUrl,
-                    volume = volume
-                }
-               TriggerClientEvent("loneradio:playRadio",playerId,"play",2,{ name = name , link = radioUrl, volume = volume})
-        		currentlyPlayingRadio = { url = radioUrl, volume = volume }
-    end 
+    if vehicle and vehicle ~= 0 then
+        Entity(vehicle).state:set('loneradio', {
+            name = name,
+            url = radioUrl,
+            volume = volume,
+            isPlaying = true
+        }, true)
+    end
+
+    -- Save player's radio for persistence
+    playerRadios[src] = {
+        name = name,
+        url = radioUrl,
+        volume = volume
+    }
 end)
 
+-- Player explicitly stopped the radio (from UI pause button)
 AddEventHandler("stopRadio", function()
-    TriggerClientEvent("loneradio:stopRadio", -1)
-    currentlyPlayingRadio = nil
+    local src = source
+    local ped = GetPlayerPed(src)
+    local vehicle = GetVehiclePedIsIn(ped, false)
+
+    if vehicle and vehicle ~= 0 then
+        Entity(vehicle).state:set('loneradio', nil, true)
+    end
+
+    -- Player explicitly stopped -> clear saved radio (no persist)
+    playerRadios[src] = nil
+end)
+
+-- Clear vehicle state bag only (used when exiting vehicle with persist)
+AddEventHandler("stopVehicleRadio", function()
+    local src = source
+    local ped = GetPlayerPed(src)
+    local vehicle = GetVehiclePedIsIn(ped, false)
+
+    if vehicle and vehicle ~= 0 then
+        Entity(vehicle).state:set('loneradio', nil, true)
+    end
+    -- Do NOT clear playerRadios[src] - player wants to keep their radio
 end)
 
 AddEventHandler("updateVolume", function(volume)
-    if currentlyPlayingRadio then
-        currentlyPlayingRadio.volume = volume
-        TriggerClientEvent("loneradio:updateVolume", -1, volume)
+    local src = source
+    local ped = GetPlayerPed(src)
+    local vehicle = GetVehiclePedIsIn(ped, false)
+
+    if vehicle and vehicle ~= 0 then
+        local currentState = Entity(vehicle).state.loneradio
+        if currentState and currentState.isPlaying then
+            local newState = {
+                name = currentState.name,
+                url = currentState.url,
+                volume = volume,
+                isPlaying = true
+            }
+            Entity(vehicle).state:set('loneradio', newState, true)
+        end
+    end
+
+    if playerRadios[src] then
+        playerRadios[src].volume = volume
     end
 end)
 
+-- Player entered a new vehicle -> apply saved radio
+AddEventHandler("loneradio:enterVehicle", function()
+    local src = source
 
+    if not Config.persistRadio then return end
+    if not playerRadios[src] then return end
 
-function GetClosestPlayers(source, count)
-    local players = GetPlayers()
-    local closestPlayers = {}
+    local ped = GetPlayerPed(src)
+    local vehicle = GetVehiclePedIsIn(ped, false)
 
-    table.sort(players, function(a, b)
-        return #(GetEntityCoords(GetPlayerPed(a))), #(GetEntityCoords(GetPlayerPed(source))) < #(GetEntityCoords(GetPlayerPed(b))),#(GetEntityCoords(GetPlayerPed(source)))
-    end)
-
-    for i = 1, count do
-        if players[i] then
-            table.insert(closestPlayers, players[i])
+    if vehicle and vehicle ~= 0 then
+        local existingState = Entity(vehicle).state.loneradio
+        if not existingState or not existingState.isPlaying then
+            local saved = playerRadios[src]
+            Entity(vehicle).state:set('loneradio', {
+                name = saved.name,
+                url = saved.url,
+                volume = saved.volume,
+                isPlaying = true
+            }, true)
         end
     end
+end)
 
-    return closestPlayers
-end
+-- Clean up on disconnect
+AddEventHandler("playerDropped", function()
+    local src = source
+    playerRadios[src] = nil
 
-
-
-function GetAllOnlinePlayers()
-    local players = {}
-
-    for _, playerId in ipairs(GetPlayers()) do
-        table.insert(players, playerId)
-    end
-
-    return players
-end
-
--- Function to get players in the same vehicle as the specified player
-function GetPlayersInSameVehicle(source)
-    local localVehicle = GetVehiclePedIsIn(GetPlayerPed(source), false)
-    local playersInSameVehicle = {}
-
-    for _, playerId in ipairs(GetAllOnlinePlayers()) do
-        if playerId ~= source then
-            local playerPed = GetPlayerPed(playerId)
-            local vehicle = GetVehiclePedIsIn(playerPed, false)
-
-            if DoesEntityExist(playerPed) and DoesEntityExist(vehicle) and vehicle == localVehicle then
-                table.insert(playersInSameVehicle, playerId)
+    local ped = GetPlayerPed(src)
+    if ped and ped ~= 0 then
+        local vehicle = GetVehiclePedIsIn(ped, false)
+        if vehicle and vehicle ~= 0 then
+            local state = Entity(vehicle).state.loneradio
+            if state and state.isPlaying then
+                Entity(vehicle).state:set('loneradio', nil, true)
             end
         end
     end
-
-    return playersInSameVehicle
-end
-
--- Example usage:
-RegisterCommand("listplayersinvehicle", function(source, args, rawCommand)
-    local source = source
-
-    local playersInVehicle = GetPlayersInSameVehicle(source)
-
-    if #playersInVehicle > 0 then
-        local playerNames = {}
-
-        for _, playerId in ipairs(playersInVehicle) do
-            print(playerId)
-            local playerName = GetPlayerName(playerId)
-            table.insert(playerNames, playerName)
-        end
-
-        local playerList = table.concat(playerNames, ", ")
-        TriggerClientEvent("chatMessage", source, "SYSTEM", {255, 255, 0}, "Players in the same vehicle: " .. playerList)
-    else
-        TriggerClientEvent("chatMessage", source, "SYSTEM", {255, 0, 0}, "No players in the same vehicle.")
-    end
-end, false)
+end)
