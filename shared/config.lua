@@ -12,6 +12,7 @@ Config.persistRadio = true
 
 Config.Radios = {
     { name = "Vanavil FM",        url = "https://s7.yesstreaming.net:9000/stream",                       freq = 88.5, genre = "Pop" },
+    { name = "LONE FM",        url = "https://stream.zeno.fm/rttf20bp97zuv",                       freq = 87.1, genre = "Pop" },
     { name = "Pink Noise",        url = "https://uk1.internet-radio.com/proxy/pinknoise?mp=/stream;",    freq = 89.3, genre = "Pop" },
     { name = "Hawkar Radio",      url = "https://uk3.internet-radio.com/proxy/hawkar?mp=/stream;",       freq = 90.1, genre = "Rock" },
     { name = "0 Radio",           url = "https://uk7.internet-radio.com/proxy/0radio?mp=/stream",        freq = 91.5, genre = "Dance" },
