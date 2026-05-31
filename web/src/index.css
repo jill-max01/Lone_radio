@@ -1,9 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: transparent;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 @font-face {
@@ -11,62 +18,66 @@ body {
     src: url('/imgs/digital-7.ttf');
 }
 
-/* CarPlay Dashboard Physical Bezel */
+/* ========================================
+   CARPLAY / ANDROID AUTO DISPLAY SHELL
+   Slim square bezel — less rounded corners
+   ======================================== */
 .infotainment-wrapper {
     position: absolute;
     top: 50%;
     left: 50%;
-    background: #000000; /* OLED True Black */
-    border-radius: 25px;
-    padding: 2px 2px 45px 2px; /* Thinner sides, thick bottom chin */
-    border: 2px solid #1a1a1a;
-    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
-    pointer-events: auto; /* Required for dragging */
+    background: #0a0a0a;
+    border-radius: 4px;
+    padding: 3px 3px 38px 3px;
+    border: 1.5px solid #1c1c1e;
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,0.03),
+        0 20px 60px rgba(0,0,0,0.8),
+        0 0 80px rgba(0,0,0,0.4);
+    pointer-events: auto;
     z-index: 1000;
-    /* Safe limits for 1080p -> 4k */
     max-width: 90vw;
     max-height: 90vh;
     transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, 0px)));
+    animation: display-boot 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Actual Screen Display */
+@keyframes display-boot {
+    0% { opacity: 0; transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-47% + var(--offset-y, 0px))); filter: brightness(0); }
+    60% { filter: brightness(1.1); }
+    100% { opacity: 1; transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, 0px))); filter: brightness(1); }
+}
+
+/* LCD Display Panel */
 #radioMenu {
-    /* Background logic is handled inline in React */
-    background-color: #000000; /* OLED Fallback */
-    border-radius: 20px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
-    height: 550px;
-    width: 850px;
+    background-color: #0c0c0e;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    height: 620px;
+    width: 960px;
     max-width: 100%;
-    max-height: calc(90vh - 65px); /* Subtract bezel padding */
+    max-height: calc(90vh - 55px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    color: #e0e0e0;
+    color: #e0e0e5;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     position: relative;
 }
 
-/* Boot animation fixing scrollbar clipping */
-@keyframes infotainment-enter {
-    0% { transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-45% + var(--offset-y, 0px))); opacity: 0; filter: blur(10px); }
-    100% { transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, 0px))); opacity: 1; filter: blur(0px); }
-}
-
-/* Dark overlay to ensure readability on bright wallpapers */
+/* Frosted overlay for wallpapers */
 .wallpaper-overlay {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(15, 15, 20, 0.85); /* Semi-transparent dark */
-    backdrop-filter: blur(8px); /* Blur the bright background */
-    -webkit-backdrop-filter: blur(8px);
+    inset: 0;
+    background: rgba(10, 10, 14, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 0;
     pointer-events: none;
 }
 
-/* Elevate interactive content above the overlay */
 .infotainment-content {
     position: relative;
     z-index: 1;
@@ -75,38 +86,69 @@ body {
     height: 100%;
 }
 
-/* OLED Status Bar (Non-Draggable top) */
+/* ========================================
+   STATUS BAR (Top)
+   ======================================== */
 .oled-status-bar {
     flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 20px;
-    height: 35px;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 0 16px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
     color: #fff;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     z-index: 10;
+    letter-spacing: 0.2px;
 }
 
 .status-left, .status-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     white-space: nowrap;
 }
 .status-right { justify-content: flex-end; }
 .status-center { flex: 1; text-align: center; }
 
-.status-time { letter-spacing: 0.5px; }
-.status-carrier { font-size: 12px; opacity: 0.8; }
-.status-icon { width: 14px; height: 14px; opacity: 0.9; }
+.status-time { letter-spacing: 0.3px; font-variant-numeric: tabular-nums; }
+.status-carrier { font-size: 11px; opacity: 0.7; }
+.status-icon { width: 13px; height: 13px; opacity: 0.8; }
 
-/* Main App Area Routing */
+/* Segmented Controls (Replaces old underlined nav) */
+.segmented-control {
+    display: inline-flex;
+    background: rgba(118, 118, 128, 0.24);
+    border-radius: 8px;
+    padding: 2px;
+}
+
+.segment {
+    padding: 4px 16px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.segment.active {
+    background: #636366;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04);
+}
+
+/* ========================================
+   MAIN CONTENT AREA
+   ======================================== */
 .oled-app-area {
     flex: 1;
     display: flex;
@@ -115,138 +157,105 @@ body {
     position: relative;
 }
 
-/* App Grid (Home Screen) */
-.app-grid-home {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 30px;
-    padding: 40px 60px;
-    flex: 1;
-    align-content: start;
-}
-
-.home-app-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.home-app-card:hover {
-    transform: scale(1.05);
-}
-
-.home-app-icon {
-    width: 90px;
-    height: 90px;
-    border-radius: 22px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.2);
-    color: white;
-}
-
-.home-app-icon svg { width: 45px; height: 45px; }
-
-/* Colorful App Gradients */
-.bg-music { background: linear-gradient(135deg, #ff2a5f, #ff7b00); }
-.bg-settings { background: linear-gradient(135deg, #7b818c, #3f4756); }
-.bg-maps { background: linear-gradient(135deg, #32d74b, #159c27); }
-.bg-phone { background: linear-gradient(135deg, #00c6ff, #0072ff); }
-
-.home-app-card span {
-    color: white;
-    font-size: 14px;
-    font-weight: 500;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-}
-
-/* App Pane (Inner Views like Radios, Settings) */
 .app-pane {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    animation: fade-in-scale 0.2s ease-out;
+    animation: pane-enter 0.2s ease-out;
 }
 
-@keyframes fade-in-scale {
-    0% { opacity: 0; transform: scale(0.98); }
-    100% { opacity: 1; transform: scale(1); }
+@keyframes pane-enter {
+    0% { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
-.pane-header {
-    display: flex;
-    align-items: center;
-    padding: 15px 25px 0 25px;
-    gap: 15px;
-}
-
-.pane-header h2 {
-    color: white;
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-}
-
-.back-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: transparent;
-    border: none;
-    color: #00e5ff; /* OLED Cyan highlight */
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    padding: 5px 10px 5px 0;
-    transition: opacity 0.2s;
-}
-
-.back-btn:hover { opacity: 0.7; }
-.back-btn svg { width: 22px; height: 22px; fill: currentColor; }
-
-/* Search Bar */
+/* ========================================
+   SEARCH BAR
+   ======================================== */
 .search-container {
-    padding: 0 25px;
-    margin: 15px 0;
+    padding: 0 20px;
+    margin: 12px 0;
     flex-shrink: 0;
 }
 
 .search-bar {
     width: 100%;
-    padding: 12px 20px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(20, 20, 25, 0.6);
+    padding: 0 16px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(28, 28, 30, 0.8);
     color: #fff;
-    font-family: 'Poppins', sans-serif;
-    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
     outline: none;
-    transition: all 0.2s;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    transition: border-color 0.15s, box-shadow 0.15s;
     box-sizing: border-box;
 }
 
+.search-bar::placeholder {
+    color: rgba(255,255,255,0.3);
+}
+
 .search-bar:focus {
-    background: rgba(20, 20, 25, 0.8);
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2), inset 0 2px 4px rgba(0,0,0,0.2);
+    background: rgba(28, 28, 30, 0.95);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.25);
     border-color: #007aff;
 }
 
-/* App Grid (Stations) */
+/* ========================================
+   STATION GRID  —  CarPlay compact tiles
+   ======================================== */
 .station-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 20px;
-    padding: 10px 25px 25px 25px;
+    grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+    gap: 14px;
+    padding: 8px 20px 20px 20px;
     overflow-y: auto;
     flex: 1;
-    min-height: 0; /* Critical: Allows flex wrapping height limits to enforce scrolling */
+    min-height: 0;
+    /* GPU-accelerated scroll */
+    will-change: scroll-position;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Genre Filters */
+.genre-filters {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px 14px 20px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+}
+.genre-filters::-webkit-scrollbar {
+    display: none;
+}
+.genre-pill {
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.genre-pill:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+.genre-pill.active {
+    background: #00e5ff;
+    border-color: #00e5ff;
+    color: #000;
+    box-shadow: 0 0 10px rgba(0,229,255,0.3);
 }
 
 .app-icon-wrapper {
@@ -254,120 +263,173 @@ body {
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.15s ease;
+    will-change: transform;
 }
 
 .app-icon-wrapper:hover {
-    transform: scale(1.08) translateY(-5px);
+    transform: scale(1.06);
+}
+
+.app-icon-wrapper:active {
+    transform: scale(0.95);
 }
 
 .app-icon {
-    width: 85px;
-    height: 85px;
-    border-radius: 20px; /* iOS Squircle */
-    background: linear-gradient(135deg, rgba(50,50,55,0.9), rgba(30,30,35,0.9));
+    width: 80px;
+    height: 80px;
+    border-radius: 6px;
+    background: linear-gradient(145deg, #2c2c2e, #1c1c1e);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 30px;
+    font-size: 22px;
     font-weight: 700;
-    color: white;
-    box-shadow: 0 8px 15px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.2);
-    margin-bottom: 10px;
-    border: 1px solid rgba(255,255,255,0.05);
-    transition: all 0.3s ease;
+    color: rgba(255,255,255,0.9);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    margin-bottom: 6px;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    will-change: box-shadow;
+    letter-spacing: 0.5px;
 }
 
 .app-icon-wrapper:hover .app-icon {
-    box-shadow: 0 12px 25px rgba(0,122,255,0.4), inset 0 2px 2px rgba(255,255,255,0.2);
-    border: 2px solid #007aff;
+    box-shadow: 0 6px 20px rgba(0,122,255,0.3);
+    border-color: rgba(0,122,255,0.4);
 }
 
 .app-icon.active {
-    background: linear-gradient(135deg, #007aff, #0056b3);
+    background: linear-gradient(145deg, #0a84ff, #0064d2);
+    box-shadow: 0 4px 18px rgba(0,122,255,0.5);
+    border-color: transparent;
+}
+
+.favorite-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.3);
+    color: rgba(255,255,255,0.3);
+    opacity: 0;
+    transition: opacity 0.2s, color 0.2s, transform 0.2s;
+}
+
+.app-icon-wrapper:hover .favorite-btn {
+    opacity: 1;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+    color: #ffcc00;
+}
+
+.favorite-btn.active {
+    opacity: 1;
+    color: #ffcc00;
+}
+
+.favorite-btn svg {
+    width: 12px;
+    height: 12px;
 }
 
 .app-title {
     font-size: 13px;
-    font-weight: 500;
-    color: #fff;
+    font-weight: 600;
+    color: #ffffff;
     text-align: center;
-    max-width: 100%;
+    max-width: 95px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    line-height: 1.3;
 }
 
-/* Settings Form */
+.app-genre {
+    font-size: 10px;
+    font-weight: 500;
+    color: #00e5ff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* ========================================
+   SETTINGS PANEL
+   ======================================== */
 .settings-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
     flex: 1;
     overflow-y: auto;
-    padding: 10px 20px 25px 25px;
+    padding: 8px 20px 20px 20px;
     min-height: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .settings-group {
-    background: rgba(30, 30, 35, 0.6);
-    padding: 20px;
-    border-radius: 14px;
+    background: rgba(28, 28, 30, 0.7);
+    padding: 16px;
+    border-radius: 6px;
     text-align: left;
-    border: 1px solid rgba(255,255,255,0.06);
-    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.04);
 }
 
 .settings-group label {
     display: block;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    color: #e0e0e0;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: #e0e0e5;
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
 }
 
-/* Wallpaper Gallery UI */
+/* Wallpaper Gallery */
 .wallpaper-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
 }
 
 .wallpaper-thumb {
     width: 100%;
-    height: 90px;
-    border-radius: 12px;
-    background-color: #222;
+    height: 75px;
+    border-radius: 8px;
+    background-color: #1c1c1e;
     background-size: cover;
     background-position: center;
     cursor: pointer;
     border: 2px solid transparent;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: border-color 0.15s, transform 0.12s;
     box-sizing: border-box;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
 .wallpaper-thumb:hover {
-    transform: scale(1.05);
-    border-color: rgba(255,255,255,0.3);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.5);
+    transform: scale(1.03);
+    border-color: rgba(255,255,255,0.2);
 }
 
 .wallpaper-thumb.active {
     border-color: #007aff;
-    box-shadow: 0 0 0 3px rgba(0,122,255,0.3), 0 8px 15px rgba(0,122,255,0.4);
-    transform: scale(1.05);
+    box-shadow: 0 0 0 2px rgba(0,122,255,0.3);
 }
 
+/* Range Inputs */
 .settings-group input[type="range"] {
     accent-color: #007aff;
-    background: rgba(0,0,0,0.4);
-    height: 6px;
-    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+    height: 4px;
+    border-radius: 2px;
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
@@ -375,136 +437,123 @@ body {
 .settings-group input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    background: #007aff;
+    background: #fff;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    transition: transform 0.1s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
-.settings-group input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.1); }
 
+/* Text Inputs */
 .custom-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 10px 15px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
     background: rgba(0, 0, 0, 0.3);
     color: #fff;
-    font-family: 'Poppins', sans-serif;
-    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
     outline: none;
-    margin-top: 10px;
+    margin-top: 8px;
+    transition: border-color 0.15s;
 }
 .custom-input:focus { border-color: #007aff; }
 
-.preset-buttons {
-    display: flex;
-    gap: 8px;
-    margin-top: 15px;
-    flex-wrap: wrap;
-}
-.preset-btn {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: #ccc;
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.preset-btn:hover { background: rgba(255,255,255,0.15); color: white; }
-
+/* Toggle Switches */
 .toggle-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 .toggle-switch {
-    width: 46px;
-    height: 26px;
+    width: 44px;
+    height: 24px;
     background-color: rgba(255,255,255,0.1);
-    border-radius: 14px;
+    border-radius: 12px;
     position: relative;
     cursor: pointer;
-    transition: 0.3s;
-    border: 1px solid rgba(255,255,255,0.05);
+    transition: background-color 0.2s;
+    border: none;
+    flex-shrink: 0;
 }
-.toggle-switch.on { background-color: #34c759; border-color: #34c759; }
+.toggle-switch.on { background-color: #34c759; }
 .toggle-switch::after {
     content: '';
     position: absolute;
-    top: 1px; left: 1px;
-    width: 22px; height: 22px;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
     background: #fff;
     border-radius: 50%;
-    transition: 0.3s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 .toggle-switch.on::after { transform: translateX(20px); }
 
-/* Now Playing Bar Docked */
+/* ========================================
+   NOW PLAYING BAR (Bottom dock)
+   ======================================== */
 #controls {
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 15px 25px;
-    background: rgba(20, 20, 25, 0.85);
-    border-top: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.4);
-    backdrop-filter: blur(10px);
+    padding: 12px 20px;
+    background: rgba(18, 18, 20, 0.92);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
 
 .now-playing-info {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     flex: 1;
 }
 
 .now-playing-cover {
-    width: 45px;
-    height: 45px;
-    background: linear-gradient(135deg, #007aff, #0056b3);
-    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #0a84ff, #0064d2);
+    border-radius: 4px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-weight: 700;
     font-size: 16px;
     color: white;
-    box-shadow: 0 4px 10px rgba(0,122,255,0.4);
+    box-shadow: 0 2px 8px rgba(0,122,255,0.35);
 }
 
-.now-playing-text h4 { margin: 0; font-size: 15px; font-weight: 600; color: #fff; }
-.now-playing-text p { margin: 0; font-size: 13px; color: #aaa; }
+.now-playing-text h4 { margin: 0; font-size: 16px; font-weight: 600; color: #fff; }
+.now-playing-text p { margin: 0; font-size: 12px; color: #00e5ff; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
 #volumeControl {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex: 1;
-    max-width: 300px;
-    margin: 0 25px;
+    max-width: 260px;
+    margin: 0 20px;
 }
 
 #volumeControl label {
     font-weight: 600;
-    font-size: 13px;
-    color: #ccc;
+    font-size: 11px;
+    color: #8e8e93;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 #volumeSlider {
     flex: 1;
     accent-color: #007aff;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(255,255,255,0.2);
+    height: 3px;
+    border-radius: 1.5px;
+    background: rgba(255,255,255,0.15);
     outline: none;
     -webkit-appearance: none;
     appearance: none;
@@ -512,100 +561,98 @@ body {
 #volumeSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: #fff;
     cursor: pointer;
-    box-shadow: 0 0 5px rgba(0,0,0, 0.5);
-    transition: transform 0.1s;
+    box-shadow: 0 0 4px rgba(0,0,0, 0.4);
 }
-#volumeSlider::-webkit-slider-thumb:hover { transform: scale(1.2); }
-#volumeValue { font-size: 13px; font-weight: bold; color: #fff; min-width: 40px; text-align: right; }
+#volumeValue { font-size: 12px; font-weight: 600; color: #fff; min-width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
 
 #stopRadio {
-    padding: 10px 25px;
-    background: rgba(255,255,255,0.1);
+    padding: 8px 20px;
+    background: rgba(255,255,255,0.08);
     color: #fff;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s, border-color 0.15s;
 }
 #stopRadio:hover {
-    background: #ff3b30; /* iOS Red */
+    background: #ff3b30;
     border-color: #ff3b30;
-    box-shadow: 0 4px 10px rgba(255, 59, 48, 0.4);
 }
 
-/* LONE OS Branding in the physical bezel bottom chin */
+/* ========================================
+   LONE OS BRANDING (Bottom Chin)
+   ======================================== */
 .lonedev-brand {
     position: absolute;
-    bottom: 12px;
+    bottom: 10px;
     left: 0;
     right: 0;
     text-align: center;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.15); /* Embossed matte look */
-    letter-spacing: 6px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.08);
+    letter-spacing: 5px;
     text-transform: uppercase;
     z-index: 10;
     pointer-events: none;
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.8), -1px -1px 1px rgba(255,255,255,0.02);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.15); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.3); }
+/* ========================================
+   SCROLLBAR — Minimal
+   ======================================== */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,0.2); }
 ::-webkit-scrollbar-track { background-color: transparent; }
 
-/* 
-  =========================================
-     REALISTIC 1-DIN CSS CAR STEREO
-  =========================================
-*/
-
-/* Pure CSS Hardware Radio (Bottom Right) */
+/* ========================================
+   MINI RADIO WIDGET (Bottom Right Overlay)
+   ======================================== */
 #radioIcon {
     position: absolute;
-    bottom: 30px;
-    right: 30px;
+    bottom: 25px;
+    right: 25px;
     z-index: 1000;
     will-change: transform;
+    contain: layout style;
 }
 
-/* Modern OLED Hardware Mini Radio Widget */
 .css-radio-chassis {
     width: auto;
-    min-width: 250px;
+    min-width: 230px;
     height: auto;
-    background: linear-gradient(145deg, #1e1e22, #111115);
-    border-radius: 12px;
-    border: 1px solid #000;
+    background: linear-gradient(145deg, #1c1c1e, #111113);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.04);
     display: flex;
     flex-direction: column;
-    padding: 10px 14px 14px 14px;
+    padding: 8px 12px 12px 12px;
     box-sizing: border-box;
     cursor: grab;
-    pointer-events: auto; /* Allow dragging */
+    pointer-events: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
 }
 
 .css-radio-chassis:active { cursor: grabbing; }
 
 .radio-hardware-brand {
-    font-family: 'Poppins', sans-serif;
-    color: #444;
-    font-size: 9px;
+    font-family: 'Inter', sans-serif;
+    color: #3a3a3c;
+    font-size: 8px;
     font-weight: 700;
     letter-spacing: 2px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     text-align: center;
-    text-shadow: 0 1px 1px rgba(255,255,255,0.05);
+    text-transform: uppercase;
 }
 
 .radio-hardware-brand span {
@@ -615,79 +662,84 @@ body {
 
 .radio-oled-screen {
     background: #000000;
-    border-radius: 6px;
-    padding: 12px 15px;
+    border-radius: 4px;
+    padding: 10px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border: 2px solid #0a0a0c;
-    box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.05), 0 1px 0 rgba(255,255,255,0.05);
-    min-height: 48px;
+    border: 1px solid #141416;
+    box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.03);
+    min-height: 44px;
 }
 
 .radio-widget-info {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-width: 140px;
-    margin-right: 15px;
+    min-width: 130px;
+    margin-right: 12px;
 }
 
 .radio-widget-title {
     color: #00e5ff;
-    font-size: 15px;
-    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    letter-spacing: 0.5px;
-    text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+    letter-spacing: 0.3px;
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.5);
     line-height: 1.2;
 }
 
 .radio-widget-subtitle {
     color: #00e5ff;
-    opacity: 0.7;
+    opacity: 0.8;
     font-size: 11px;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-    text-shadow: 0 0 5px rgba(0, 229, 255, 0.3);
+    gap: 5px;
+    margin-top: 3px;
+    text-shadow: 0 0 4px rgba(0, 229, 255, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
 }
 
 .live-dot {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     background: #00e5ff;
     border-radius: 50%;
-    box-shadow: 0 0 6px #00e5ff;
+    box-shadow: 0 0 4px #00e5ff;
     animation: live-pulse 1.5s infinite alternate;
+    will-change: opacity;
 }
 
 @keyframes live-pulse {
-    0% { opacity: 0.3; transform: scale(0.8); }
-    100% { opacity: 1; transform: scale(1.2); }
+    0% { opacity: 0.3; }
+    100% { opacity: 1; }
 }
 
-/* EQ Inside Widget */
+/* EQ Bars — GPU-optimized */
 .radio-widget-eq {
     display: flex;
     align-items: flex-end;
-    gap: 3px;
-    height: 20px;
+    gap: 2px;
+    height: 18px;
     padding-bottom: 2px;
     flex-shrink: 0;
 }
 
 .eq-bar {
-    width: 3px;
+    width: 2.5px;
     background: #00e5ff;
     border-radius: 1px 1px 0 0;
-    box-shadow: 0 0 4px #00e5ff;
+    will-change: transform;
     animation: eq-bounce 1.2s ease infinite alternate;
 }
 
@@ -695,19 +747,15 @@ body {
 .eq-bar:nth-child(2) { animation-delay: 0.4s; height: 60%; }
 .eq-bar:nth-child(3) { animation-delay: 0.2s; height: 80%; }
 .eq-bar:nth-child(4) { animation-delay: 0.5s; height: 40%; }
-.eq-bar:nth-child(5) { animation-delay: 0.3s; height: 90%; }
 
 @keyframes eq-bounce {
     0% { transform: scaleY(0.3); transform-origin: bottom; }
     100% { transform: scaleY(1); transform-origin: bottom; }
 }
 
-/* 
-  =========================================
-     V7 IMMERSIVE TUNING INTERFACE
-  =========================================
-*/
-
+/* ========================================
+   TUNER MODE
+   ======================================== */
 .tuning-pane {
     display: flex;
     justify-content: center;
@@ -716,60 +764,61 @@ body {
 }
 
 .tuner-container {
-    background: rgba(10, 10, 12, 0.4);
-    border: 1px solid rgba(0, 229, 255, 0.1);
-    border-radius: 20px;
-    padding: 30px 40px;
-    width: 500px;
+    background: rgba(10, 10, 12, 0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 28px 36px;
+    width: 480px;
     text-align: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 40px rgba(0, 229, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .tuner-digital-readout {
     display: flex;
     justify-content: center;
     align-items: baseline;
-    gap: 12px;
-    margin-bottom: 5px;
+    gap: 10px;
+    margin-bottom: 4px;
 }
 
 .tuner-number {
-    font-size: 75px;
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: 900;
+    font-size: 68px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
+    font-weight: 800;
     color: #00e5ff;
-    text-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
     line-height: 1;
     letter-spacing: -2px;
+    font-variant-numeric: tabular-nums;
 }
 
 .tuner-mhz {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     color: #fff;
-    opacity: 0.5;
+    opacity: 0.4;
 }
 
 .tuner-instructions {
     color: #00e5ff;
-    opacity: 0.6;
-    font-size: 13px;
-    margin-bottom: 25px;
+    opacity: 0.5;
+    font-size: 11px;
+    margin-bottom: 22px;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 2.5px;
     font-weight: 600;
 }
 
 .tuner-dial-wrapper {
     position: relative;
-    height: 60px;
-    margin-bottom: 25px;
+    height: 50px;
+    margin-bottom: 22px;
     background: rgba(0,0,0,0.5);
-    border-radius: 8px;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
-    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px;
+    box-shadow: inset 0 1px 6px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.04);
     overflow: hidden;
 }
 
@@ -793,82 +842,90 @@ body {
 .tuner-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 14px;
-    height: 60px;
+    width: 10px;
+    height: 50px;
     background: #00e5ff;
-    border-radius: 3px;
+    border-radius: 2px;
     cursor: pointer;
-    box-shadow: 0 0 15px #00e5ff, 0 0 5px rgba(255,255,255,0.8) inset;
-    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 0 0 12px #00e5ff, 0 0 3px rgba(255,255,255,0.6) inset;
+    border: 1px solid rgba(255,255,255,0.6);
 }
 
 .tuner-ticks-container {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     pointer-events: none;
-    padding: 0 6px;
+    padding: 0 5px;
     z-index: 1;
 }
 
 .tuner-tick {
-    width: 2px;
-    height: 15px;
-    background: rgba(255,255,255,0.1);
+    width: 1px;
+    height: 12px;
+    background: rgba(255,255,255,0.08);
 }
 
 .tuner-tick.major {
-    height: 30px;
-    background: rgba(255,255,255,0.3);
+    height: 26px;
+    background: rgba(255,255,255,0.2);
 }
 
 .tuner-station-name {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: #fff;
-    min-height: 30px;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+    min-height: 28px;
+    letter-spacing: 0.5px;
 }
 
 .tuner-toggle-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(0, 229, 255, 0.1);
+    justify-content: center;
+    gap: 6px;
+    background: rgba(0, 229, 255, 0.08);
     color: #00e5ff;
-    border: 1px solid rgba(0, 229, 255, 0.3);
-    padding: 10px 18px;
-    border-radius: 8px;
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    padding: 0 14px;
+    height: 36px;
+    border-radius: 4px;
     font-size: 13px;
     font-weight: 600;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 10px rgba(0, 229, 255, 0.1);
+    transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+    letter-spacing: 0.5px;
+    box-sizing: border-box;
+}
+
+.tuner-toggle-btn.active-filter {
+    background: #ffcc00;
+    color: #000;
+    border-color: #ffcc00;
 }
 
 .tuner-toggle-btn:hover {
-    background: rgba(0, 229, 255, 0.2);
-    box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
-    transform: translateY(-2px);
+    background: rgba(0, 229, 255, 0.15);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.1);
+}
+
+.tuner-toggle-btn.active-filter:hover {
+    background: #e6b800;
+    border-color: #e6b800;
 }
 
 .tuner-toggle-btn.back {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    box-shadow: none;
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.7);
+    border-color: rgba(255,255,255,0.1);
 }
+
 .tuner-toggle-btn.back:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255,255,255,0.1);
+    color: #fff;
 }
 
 .tuner-header {
@@ -876,7 +933,7 @@ body {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 15px 25px;
+    padding: 12px 20px;
     position: absolute;
     top: 0;
     left: 0;
@@ -887,17 +944,17 @@ body {
 .tuner-vol-widget {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     background: rgba(0, 0, 0, 0.5);
-    padding: 8px 15px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
 }
 
 .tuner-vol-widget label {
-    color: #aaa;
-    font-size: 12px;
+    color: #8e8e93;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 1px;
 }
@@ -905,22 +962,58 @@ body {
 .tuner-vol-widget input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
-    width: 100px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
+    width: 90px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 1.5px;
     outline: none;
 }
 
 .tuner-vol-widget input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: #00e5ff;
     cursor: pointer;
-    box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+    box-shadow: 0 0 6px rgba(0, 229, 255, 0.5);
 }
 
+/* ========================================
+   GENRE CATEGORY BADGES
+   ======================================== */
+.genre-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 2px;
+    color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.06);
+}
 
+/* ========================================
+   PERFORMANCE — Reduce paint on hidden
+   ======================================== */
+.app-pane,
+.station-grid,
+.settings-list {
+    contain: content;
+}
+
+#radioIcon {
+    contain: layout style;
+}
+
+/* Disable animations when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

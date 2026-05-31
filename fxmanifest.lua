@@ -15,7 +15,8 @@ client_scripts {
 }
 
 server_scripts {
-	'server/*.lua'
+	'server/*.lua',
+	'server/*.js'
 }
 
 ui_page 'web/dist/index.html'
