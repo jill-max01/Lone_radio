@@ -2,7 +2,7 @@
 
 Config = {}
 
-Config.command = "radio"
+Config.command = "fmradio"
 
 -- Admin toggle: if true, radio persists when player exits vehicle and auto-plays in next vehicle
 -- Players can individually disable this from the radio settings UI
