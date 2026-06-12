@@ -134,7 +134,7 @@ end)
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(500)
+        Citizen.Wait(1000) -- raised from 500ms; GTA enter/exit animation is ~1s anyway
         local ped = PlayerPedId()
         local inVehicle = IsPedInAnyVehicle(ped, false)
 
@@ -195,27 +195,33 @@ function StartAudioLoop()
 
     Citizen.CreateThread(function()
         while true do
+            Citizen.Wait(1000) -- unconditional wait: loop can never run faster than 1/s
+
+            -- Collect dead entries first, then remove — safe Lua table mutation
+            local toRemove = {}
             local hasActive = false
 
             for netId, _ in pairs(activeVehicleRadios) do
-                hasActive = true
                 local vehicle = NetToVeh(netId)
-                local soundId = "radio_" .. netId
-
                 if not DoesEntityExist(vehicle) then
+                    local soundId = "radio_" .. netId
                     if oliSound:soundExists(soundId) then
                         oliSound:Destroy(soundId)
                     end
-                    activeVehicleRadios[netId] = nil
+                    toRemove[#toRemove + 1] = netId
+                else
+                    hasActive = true
                 end
+            end
+
+            for i = 1, #toRemove do
+                activeVehicleRadios[toRemove[i]] = nil
             end
 
             if not hasActive then
                 audioLoopRunning = false
                 break
             end
-
-            Citizen.Wait(500)
         end
     end)
 end
@@ -276,24 +282,32 @@ AddStateBagChangeHandler('loneradio', nil, function(bagName, key, value, _reserv
 end)
 
 -- Discover nearby vehicles with active radios
+-- Optimised: 5s interval, vehicle-only gate, netId early-out before expensive calls
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(2000)
+        Citizen.Wait(5000)
         local ped = PlayerPedId()
+
+        -- Gate: radio is vehicle-only, no point scanning when on foot
+        if not IsPedInAnyVehicle(ped, false) then goto continue end
+
         local plyCoords = GetEntityCoords(ped)
-        
         local vehicles = GetGamePool("CVehicle")
+
         for _, vehicle in ipairs(vehicles) do
-            local vehCoords = GetEntityCoords(vehicle)
-            if #(plyCoords - vehCoords) < 50.0 then
-                local state = Entity(vehicle).state.loneradio
-                if state and state.isPlaying then
-                    local netId = NetworkGetNetworkIdFromEntity(vehicle)
-                    if not activeVehicleRadios[netId] then
+            local netId = NetworkGetNetworkIdFromEntity(vehicle)
+            -- Skip already-tracked vehicles first (avoids statebag + coord native calls)
+            if not activeVehicleRadios[netId] then
+                local vehCoords = GetEntityCoords(vehicle)
+                if #(plyCoords - vehCoords) < 50.0 then
+                    local state = Entity(vehicle).state.loneradio
+                    if state and state.isPlaying then
                         PlayVehicleRadioLocal(netId, state)
                     end
                 end
             end
         end
+
+        ::continue::
     end
 end)
